@@ -10,6 +10,7 @@ router = APIRouter(prefix="/agent", tags=["Agent Endpoints"])
 # Pydantic models for request/response
 class AgentRequest(BaseModel):
     message: str
+    thread_id: str = Query(default="1")  # Default thread ID
 
 @router.post("/run")
 async def run_agent(request: AgentRequest):
@@ -18,12 +19,14 @@ async def run_agent(request: AgentRequest):
     """
     try:
         # Create the initial state with the user's message
+        
+        config = {"configurable": {"thread_id": request.thread_id}} 
         initial_state = State(
             messages=[{"role": "user", "content": request.message}]
         )
         
         # Run the LangGraph agent
-        result = agent.graph.invoke(initial_state)
+        result = agent.graph.invoke(initial_state, config=config)  # type: ignore
         
         # Extract the agent's response from the last message
         agent_response = result["messages"][-1].content
