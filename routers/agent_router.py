@@ -1,8 +1,8 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from agents.sample.agent import agent
-from agents.sample.agent import State
+from agents.llm.agent import agent
+from agents.llm.state import State
 
 # Initialize the API router for agent functionality
 router = APIRouter(prefix="/agent", tags=["Agent Endpoints"])
