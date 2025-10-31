@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from agents.llm.agent import agent
 from agents.llm.state import State
 from agents.sidekick.agent import Sidekick  # Import the Sidekick agent
+import aiosqlite
 
 sidekick_agent = Sidekick()
 # Initialize the API router for agent functionality
@@ -11,7 +12,8 @@ router = APIRouter(prefix="/agent", tags=["Agent Endpoints"])
 # Pydantic models for request/response
 class AgentRequest(BaseModel):
     message: str
-    username: str = Query(default="1")  # Default thread ID
+    username: str
+    chat_id: str
 
 @router.post("/run")
 async def run_agent(request: AgentRequest):
@@ -21,7 +23,7 @@ async def run_agent(request: AgentRequest):
     try:
         # Create the initial state with the user's message
 
-        config = {"configurable": {"thread_id": request.username}}
+        config = {"configurable": {"thread_id": f"{request.username}_{request.chat_id}"}}
         initial_state = State(
             messages=[{"role": "user", "content": request.message}]
         )
@@ -61,7 +63,7 @@ async def run_sidekick_agent(request: AgentRequest):
         }
 
         # Run the Sidekick agent
-        result = await sidekick_agent.graph.ainvoke(state, config={"configurable": {"thread_id": request.username}}) # type: ignore
+        result = await sidekick_agent.graph.ainvoke(state, config={"configurable": {"thread_id": f"{request.username}_{request.chat_id}"}}) # type: ignore
         agent_response = result["messages"][-2].content  # Get the agent's response, not the evaluator feedback
 
         response = {
@@ -71,3 +73,18 @@ async def run_sidekick_agent(request: AgentRequest):
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Sidekick Agent error: {str(e)}")
+
+@router.get("/threads/{username}")
+async def get_user_threads(username: str):
+    """
+    Get all thread IDs for a specific user.
+    """
+    try:
+        conn = await aiosqlite.connect("memory.db")
+        cursor = await conn.execute("SELECT DISTINCT thread_id FROM checkpoints WHERE thread_id LIKE ?", (f"{username}_%",))
+        rows = await cursor.fetchall()
+        await conn.close()
+        threads = [row[0] for row in rows]
+        return {"threads": threads}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving threads: {str(e)}")
