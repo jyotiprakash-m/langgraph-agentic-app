@@ -11,12 +11,13 @@ from typing import List, Any, Optional, Dict
 from pydantic import BaseModel, Field
 from agents.sidekick.tools import playwright_tools, other_tools
 from agents.sidekick.nodes import worker, worker_router, evaluator, route_based_on_evaluation
+import aiosqlite
+import functools
 import uuid
 import asyncio
 from datetime import datetime
 from agents.sidekick.state import State
-import functools
-
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 load_dotenv(override=True)
 
 class EvaluatorOutput(BaseModel):
@@ -25,7 +26,7 @@ class EvaluatorOutput(BaseModel):
     user_input_needed: bool = Field(
         description="True if more input is needed from the user, or clarifications, or the assistant is stuck"
     )
-
+    
 class Sidekick:
     def __init__(self):
         self.worker_llm_with_tools = None
@@ -34,7 +35,7 @@ class Sidekick:
         self.llm_with_tools = None
         self.graph = None
         self.sidekick_id = str(uuid.uuid4())
-        self.memory = MemorySaver()
+        self.memory = None
         self.browser = None
         self.playwright = None
 
@@ -52,6 +53,8 @@ class Sidekick:
         return route_based_on_evaluation(self, state)
 
     async def setup(self):
+        conn = await aiosqlite.connect("memory.db")
+        self.memory = AsyncSqliteSaver(conn)
         self.tools, self.browser, self.playwright = await playwright_tools()
         self.tools += await other_tools()
         worker_llm = ChatOpenAI(model="gpt-4o-mini")

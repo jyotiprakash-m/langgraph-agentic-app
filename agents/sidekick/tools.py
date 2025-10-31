@@ -9,7 +9,6 @@ from langchain_community.tools.wikipedia.tool import WikipediaQueryRun
 from langchain_community.utilities import GoogleSerperAPIWrapper
 from langchain_community.utilities.wikipedia import WikipediaAPIWrapper
 
-
 load_dotenv(override=True)
 
 pushover_token = os.getenv("PUSHOVER_TOKEN")
@@ -45,6 +44,5 @@ async def other_tools():
     wikipedia = WikipediaAPIWrapper(wiki_client=None)
     wiki_tool = WikipediaQueryRun(api_wrapper=wikipedia)
 
-    # python_repl = PythonREPLTool()
-    
+
     return file_tools + [push_tool, tool_search, wiki_tool]
