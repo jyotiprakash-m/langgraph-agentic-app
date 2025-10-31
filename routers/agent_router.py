@@ -11,7 +11,7 @@ router = APIRouter(prefix="/agent", tags=["Agent Endpoints"])
 # Pydantic models for request/response
 class AgentRequest(BaseModel):
     message: str
-    thread_id: str = Query(default="1")  # Default thread ID
+    username: str = Query(default="1")  # Default thread ID
 
 @router.post("/run")
 async def run_agent(request: AgentRequest):
@@ -20,8 +20,8 @@ async def run_agent(request: AgentRequest):
     """
     try:
         # Create the initial state with the user's message
-        
-        config = {"configurable": {"thread_id": request.thread_id}} 
+
+        config = {"configurable": {"thread_id": request.username}}
         initial_state = State(
             messages=[{"role": "user", "content": request.message}]
         )
@@ -61,7 +61,7 @@ async def run_sidekick_agent(request: AgentRequest):
         }
 
         # Run the Sidekick agent
-        result = await sidekick_agent.graph.ainvoke(state, config={"configurable": {"thread_id": request.thread_id}})  # type: ignore
+        result = await sidekick_agent.graph.ainvoke(state, config={"configurable": {"thread_id": request.username}}) # type: ignore
         agent_response = result["messages"][-2].content  # Get the agent's response, not the evaluator feedback
 
         response = {

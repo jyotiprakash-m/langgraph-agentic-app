@@ -13,7 +13,6 @@ from agents.sidekick.tools import playwright_tools, other_tools
 from agents.sidekick.nodes import worker, worker_router, evaluator, route_based_on_evaluation
 import aiosqlite
 import functools
-import uuid
 import asyncio
 from datetime import datetime
 from agents.sidekick.state import State
@@ -34,7 +33,6 @@ class Sidekick:
         self.tools = None
         self.llm_with_tools = None
         self.graph = None
-        self.sidekick_id = str(uuid.uuid4())
         self.memory = None
         self.browser = None
         self.playwright = None
@@ -85,8 +83,8 @@ class Sidekick:
         # Compile the graph
         self.graph = graph_builder.compile(checkpointer=self.memory)
 
-    async def run_superstep(self, message, success_criteria, history):
-        config = {"configurable": {"thread_id": self.sidekick_id}}
+    async def run_superstep(self, message, success_criteria, history, thread_id: str):
+        config = {"configurable": {"thread_id": thread_id}}
 
         if self.graph is None:
             raise RuntimeError("Sidekick.setup() must be called and awaited before run_superstep().")
