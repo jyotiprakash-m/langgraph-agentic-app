@@ -26,7 +26,7 @@ async def run_agent(request: AgentRequest):
 
         config = {"configurable": {"thread_id": f"{request.username}_{request.chat_id}"}}
         initial_state = State(
-            messages=[{"role": "user", "content": request.message}]
+            messages=[HumanMessage(content=request.message)]  # Use HumanMessage object, not dict
         )
         
         # Run the LangGraph agent
@@ -74,6 +74,7 @@ async def run_sidekick_agent(request: AgentRequest):
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Sidekick Agent error: {str(e)}")
+
 
 @router.get("/threads/{username}")
 async def get_user_threads(username: str):
