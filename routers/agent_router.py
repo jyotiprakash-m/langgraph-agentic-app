@@ -1,9 +1,10 @@
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from agents.llm.agent import agent
 from agents.llm.state import State
+from agents.sidekick.agent import Sidekick  # Import the Sidekick agent
 
+sidekick_agent = Sidekick()
 # Initialize the API router for agent functionality
 router = APIRouter(prefix="/agent", tags=["Agent Endpoints"])
 
@@ -38,3 +39,35 @@ async def run_agent(request: AgentRequest):
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")
+    
+# Endpoint to run the Sidekick agent with the provided message and context
+@router.post("/sidekick/run")
+async def run_sidekick_agent(request: AgentRequest):
+    """
+    Endpoint to run the Sidekick agent with the provided message and context.
+    """
+    try:
+        # Ensure the agent is set up (tools, graph, etc.)
+        if sidekick_agent.graph is None:
+            await sidekick_agent.setup()
+
+        # Prepare the state for Sidekick
+        state = {
+            "messages": [{"role": "user", "content": request.message}],
+            "success_criteria": "The answer should be clear and accurate",
+            "feedback_on_work": None,
+            "success_criteria_met": False,
+            "user_input_needed": False,
+        }
+
+        # Run the Sidekick agent
+        result = await sidekick_agent.graph.ainvoke(state, config={"configurable": {"thread_id": request.thread_id}})  # type: ignore
+        agent_response = result["messages"][-2].content  # Get the agent's response, not the evaluator feedback
+
+        response = {
+            "agent_response": agent_response,
+            "user_message": request.message,
+        }
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Sidekick Agent error: {str(e)}")
