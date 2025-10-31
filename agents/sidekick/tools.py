@@ -31,9 +31,21 @@ def get_file_tools():
     toolkit = FileManagementToolkit(root_dir="sandbox")
     return toolkit.get_tools()
 
+# Custom tool : Get the file link
+def get_file_link(file_name: str) -> str:
+    """Generate a public link for a file in the sandbox directory"""
+    # Get root address from environment or default
+    base_url = os.getenv("BASE_URL", "http://localhost:8000/public/")
+    file_path = os.path.join("sandbox", file_name)
+    if os.path.exists(file_path):
+        return base_url + file_name
+    else:
+        return "File not found."
+
 async def other_tools():
     push_tool = Tool(name="send_push_notification", func=push, description="Use this tool when you want to send a push notification")
     file_tools = get_file_tools()
+    file_link_tool = Tool(name="get_file_link", func=get_file_link, description="Use this tool to get a public link for a file")
 
     tool_search = Tool(
         name="search",
@@ -45,4 +57,4 @@ async def other_tools():
     wiki_tool = WikipediaQueryRun(api_wrapper=wikipedia)
 
 
-    return file_tools + [push_tool, tool_search, wiki_tool]
+    return file_tools + [push_tool, tool_search, wiki_tool, file_link_tool]

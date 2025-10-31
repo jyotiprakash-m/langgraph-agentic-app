@@ -2,6 +2,7 @@ from fastapi import FastAPI
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from routers.agent_router import router as agent_router
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(
     title="LangGraph Agentic App",
@@ -26,6 +27,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files for serving zipped projects
+app.mount("/public", StaticFiles(directory="sandbox"), name="public")
 
 
 @app.get("/")
