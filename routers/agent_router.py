@@ -4,6 +4,7 @@ from agents.llm.agent import agent
 from agents.llm.state import State
 from agents.sidekick.agent import Sidekick  # Import the Sidekick agent
 import aiosqlite
+from langchain_core.messages import AIMessage, HumanMessage
 
 sidekick_agent = Sidekick()
 # Initialize the API router for agent functionality
@@ -88,3 +89,33 @@ async def get_user_threads(username: str):
         return {"threads": threads}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving threads: {str(e)}")
+
+@router.get("/thread/{username}/{chat_id}/messages")
+async def get_thread_messages(username: str, chat_id: str):
+    """
+    Get all messages for a specific thread.
+    """
+    try:
+        thread_id = f"{username}_{chat_id}"
+        # Ensure the agent is set up
+        if sidekick_agent.graph is None:
+            await sidekick_agent.setup()
+        
+        config = {"configurable": {"thread_id": thread_id}}
+        state_snapshot = await sidekick_agent.graph.aget_state(config) # type: ignore
+        
+        if state_snapshot and state_snapshot.values:
+            messages = state_snapshot.values.get("messages", [])
+            # Filter to show only human messages and AI responses with response_metadata
+            filtered_messages = []
+            for msg in messages:
+                if isinstance(msg, HumanMessage):
+                    filtered_messages.append(msg)
+                elif isinstance(msg, AIMessage) and hasattr(msg, 'response_metadata') and msg.response_metadata:
+                    filtered_messages.append(msg)
+        else:
+            filtered_messages = []
+        
+        return {"messages": filtered_messages}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving messages: {str(e)}")
