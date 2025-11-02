@@ -1,13 +1,27 @@
 from fastapi import FastAPI
+from fastapi.concurrency import asynccontextmanager
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from routers.agent_router import router as agent_router
+from routers.user_router import router as user_router
 from fastapi.staticfiles import StaticFiles
+
+from utils.database import init_db
+
+
+# ✅ Modern lifespan event system
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("🚀 Starting up db...")
+    init_db()   # Initialize the database
+    yield
+    print("🛑 Shutting down db...")
 
 app = FastAPI(
     title="LangGraph Agentic App",
     description="A FastAPI application powered by LangGraph agents",
-    version="0.1.0"
+    version="0.1.0",
+    lifespan=lifespan
 )
 
 
@@ -49,6 +63,7 @@ async def health_check():
 
 # Include routes
 app.include_router(agent_router)
+app.include_router(user_router)
 
 
 if __name__ == "__main__":
