@@ -15,8 +15,12 @@ from reportlab.lib.pagesizes import letter
 from pypdf import PdfReader
 import logging
 
-from langchain_core.tools import StructuredTool
+from twilio.rest import Client
 
+
+from langchain_core.tools import StructuredTool
+from langchain_community.tools.wolfram_alpha.tool import WolframAlphaQueryRun
+from langchain_community.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 load_dotenv(override=True)
 
@@ -221,6 +225,43 @@ def send_telegram_message( text: str) -> str:
     except Exception as e:
         return f"Telegram send error: {str(e)}"
     
+def send_whatapp_message(to_number: str, message: str, message_type: str = "sms") -> str:
+    """
+    Send SMS or WhatsApp message using Twilio API.
+    to_number: Recipient's number in format +91xxxxxxxxxx
+    message: The message to send
+    message_type: "sms" for SMS or "whatsapp" for WhatsApp (default: "sms")
+    """
+    import os
+    
+
+    account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+    auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+    from_number = os.getenv("TWILIO_PHONE_NUMBER")
+    sms_number = os.getenv("TWILIO_PHONE_SMS_NUMBER")
+
+    if not all([account_sid, auth_token, from_number, sms_number]):
+        return "❌ Twilio credentials not found in environment variables."
+    
+    client = Client(account_sid, auth_token)
+    
+    try:
+        if message_type.lower() == "whatsapp":
+            message_obj = client.messages.create(
+                body=message,
+                to="whatsapp:" + to_number,
+                from_="whatsapp:" + str(from_number),
+            )
+        else:  # SMS
+            message_obj = client.messages.create(
+                body=message,
+                to=to_number,
+                from_=str(sms_number),
+            )
+        return f"✅ {message_type.upper()} sent! SID: {message_obj.sid}"
+    except Exception as e:
+        return f"❌ Failed to send {message_type}: {str(e)}"
+    
 async def other_tools():
     push_tool = Tool(name="send_push_notification", func=safe_tool(push), description="Use this tool when you want to send a push notification")
     file_tools = get_file_tools()
@@ -243,9 +284,18 @@ async def other_tools():
     func=send_telegram_message,
     description="Send a message to a Telegram bot."
     )
+    whatsapp_tool = StructuredTool.from_function(
+    func=send_whatapp_message,
+    name="send_whatapp_message",
+    description="Send SMS or WhatsApp message using Twilio. Requires to_number (recipient), message (text), and optional message_type ('sms' or 'whatsapp')."
+)
 
     wikipedia = WikipediaAPIWrapper(wiki_client=None)
     wiki_tool = WikipediaQueryRun(api_wrapper=wikipedia)
+    
+    wolfram_api_id = os.getenv("WOLFRAMA_APP_ID")
+    wolfram_wrapper = WolframAlphaAPIWrapper(wolfram_alpha_appid=wolfram_api_id)
+    wolfram_tool = WolframAlphaQueryRun(api_wrapper=wolfram_wrapper)
 
 
-    return file_tools + [push_tool, tool_search, wiki_tool, file_link_tool, save_pdf_tool, ocr_tool, telegram_tool]
+    return file_tools + [push_tool, tool_search, wiki_tool, file_link_tool, save_pdf_tool, ocr_tool, telegram_tool, whatsapp_tool, wolfram_tool]

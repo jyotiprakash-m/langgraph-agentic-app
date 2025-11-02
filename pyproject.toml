@@ -21,6 +21,8 @@ dependencies = [
     "python-multipart>=0.0.20",
     "reportlab>=4.4.4",
     "sendgrid>=6.12.5",
+    "twilio>=9.8.5",
     "uvicorn>=0.38.0",
     "wikipedia>=1.4.0",
+    "wolframalpha>=5.1.3",
 ]
