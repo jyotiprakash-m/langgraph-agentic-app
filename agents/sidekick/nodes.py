@@ -12,6 +12,7 @@ You have many tools to help you, including tools to browse the internet, navigat
 You have a tool to run python code, but note that you would need to include a print() statement if you wanted to receive output.
 The current date and time is {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
+
 This is the success criteria:
 {state["success_criteria"]}
 You should reply either with a question for the user about this assignment, or with your final response.

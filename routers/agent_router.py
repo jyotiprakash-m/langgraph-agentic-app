@@ -83,6 +83,8 @@ async def run_sidekick_agent(
         message_content = message
         if file_path:
             message_content += f" File uploaded: {file_path}"
+            
+        
         
         # Prepare the state for Sidekick
         state = {

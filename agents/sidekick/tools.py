@@ -15,6 +15,8 @@ from reportlab.lib.pagesizes import letter
 from pypdf import PdfReader
 import logging
 
+from langchain_core.tools import StructuredTool
+
 
 load_dotenv(override=True)
 
@@ -194,7 +196,31 @@ def extract_text_from_file(
     except Exception as e:
         return f"Error during OCR extraction: {str(e)}"
         
+def send_telegram_message( text: str) -> str:
+    """
+    Send a message to a Telegram user or group.
+    Args:
+        text (str): The message to send.
+    Returns:
+        str: Result message.
+    """
 
+    
+    TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+    TELEGRAM_API_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    
+    if not TELEGRAM_BOT_TOKEN:
+        return "Error: TELEGRAM_BOT_TOKEN not set."
+    payload = {"chat_id": 1206152577, "text": text}
+    try:
+        resp = requests.post(TELEGRAM_API_URL, data=payload, timeout=10)
+        if resp.status_code == 200:
+            return "Message sent to Telegram."
+        else:
+            return f"Failed to send: {resp.text}"
+    except Exception as e:
+        return f"Telegram send error: {str(e)}"
+    
 async def other_tools():
     push_tool = Tool(name="send_push_notification", func=safe_tool(push), description="Use this tool when you want to send a push notification")
     file_tools = get_file_tools()
@@ -211,9 +237,15 @@ async def other_tools():
         func=safe_tool(extract_text_from_file),  # Wrap with safe_tool for error handling
         description="Extract text from a PDF or image file using OCR. Provide the file path in the sandbox directory (e.g., 'uploaded.pdf')."
     )
+    
+    telegram_tool = StructuredTool.from_function(
+    name="send_telegram_message",
+    func=send_telegram_message,
+    description="Send a message to a Telegram bot."
+    )
 
     wikipedia = WikipediaAPIWrapper(wiki_client=None)
     wiki_tool = WikipediaQueryRun(api_wrapper=wikipedia)
 
 
-    return file_tools + [push_tool, tool_search, wiki_tool, file_link_tool, save_pdf_tool, ocr_tool]
+    return file_tools + [push_tool, tool_search, wiki_tool, file_link_tool, save_pdf_tool, ocr_tool, telegram_tool]
