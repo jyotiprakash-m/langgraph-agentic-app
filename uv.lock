@@ -751,6 +751,8 @@ dependencies = [
     { name = "langgraph-checkpoint-sqlite" },
     { name = "playwright" },
     { name = "pydantic" },
+    { name = "pypdf" },
+    { name = "python-multipart" },
     { name = "reportlab" },
     { name = "sendgrid" },
     { name = "uvicorn" },
@@ -771,6 +773,8 @@ requires-dist = [
     { name = "langgraph-checkpoint-sqlite", specifier = ">=3.0.0" },
     { name = "playwright", specifier = ">=1.55.0" },
     { name = "pydantic", specifier = ">=2.12.3" },
+    { name = "pypdf", specifier = ">=6.1.3" },
+    { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "reportlab", specifier = ">=4.4.4" },
     { name = "sendgrid", specifier = ">=6.12.5" },
     { name = "uvicorn", specifier = ">=0.38.0" },
@@ -1395,6 +1399,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pypdf"
+version = "6.1.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/13/3d/b6ead84ee437444f96862beb68f9796da8c199793bed08e9397b77579f23/pypdf-6.1.3.tar.gz", hash = "sha256:8d420d1e79dc1743f31a57707cabb6dcd5b17e8b9a302af64b30202c5700ab9d", size = 5076271, upload-time = "2025-10-22T16:13:46.061Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fa/ed/494fd0cc1190a7c335e6958eeaee6f373a281869830255c2ed4785dac135/pypdf-6.1.3-py3-none-any.whl", hash = "sha256:eb049195e46f014fc155f566fa20e09d70d4646a9891164ac25fa0cbcfcdbcb5", size = 323863, upload-time = "2025-10-22T16:13:44.174Z" },
+]
+
+[[package]]
 name = "python-dotenv"
 version = "1.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1410,6 +1423,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/56/fa/284e52a8c6dcbe25671f02d217bf2f85660db940088faf18ae7a05e97313/python_http_client-3.3.7.tar.gz", hash = "sha256:bf841ee45262747e00dec7ee9971dfb8c7d83083f5713596488d67739170cea0", size = 9377, upload-time = "2022-03-09T20:23:56.386Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/29/31/9b360138f4e4035ee9dac4fe1132b6437bd05751aaf1db2a2d83dc45db5f/python_http_client-3.3.7-py3-none-any.whl", hash = "sha256:ad371d2bbedc6ea15c26179c6222a78bc9308d272435ddf1d5c84f068f249a36", size = 8352, upload-time = "2022-03-09T20:23:54.862Z" },
+]
+
+[[package]]
+name = "python-multipart"
+version = "0.0.20"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f3/87/f44d7c9f274c7ee665a29b885ec97089ec5dc034c7f3fafa03da9e39a09e/python_multipart-0.0.20.tar.gz", hash = "sha256:8dd0cab45b8e23064ae09147625994d090fa46f5b0d1e13af944c331a7fa9d13", size = 37158, upload-time = "2024-12-16T19:45:46.972Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/45/58/38b5afbc1a800eeea951b9285d3912613f2603bdf897a4ab0f4bd7f405fc/python_multipart-0.0.20-py3-none-any.whl", hash = "sha256:8a62d3a8335e06589fe01f2a3e178cdcc632f3fbe0d492ad9ee0ec35aab1f104", size = 24546, upload-time = "2024-12-16T19:45:44.423Z" },
 ]
 
 [[package]]

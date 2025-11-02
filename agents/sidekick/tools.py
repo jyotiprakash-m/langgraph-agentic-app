@@ -1,3 +1,5 @@
+import json
+from typing import List, Optional
 from playwright.async_api import async_playwright
 from langchain_community.agent_toolkits import PlayWrightBrowserToolkit
 from dotenv import load_dotenv
@@ -10,6 +12,8 @@ from langchain_community.utilities import GoogleSerperAPIWrapper
 from langchain_community.utilities.wikipedia import WikipediaAPIWrapper
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
+from pypdf import PdfReader
+import logging
 
 
 load_dotenv(override=True)
@@ -109,6 +113,88 @@ def save_file_pdf(file_name: str, content: str) -> str:
         return f"Error saving PDF: {str(e)}"
 
 
+def extract_text_from_file(
+    file_path: str,
+    task_type: str = "default",
+    max_tokens: int = 16000,
+    temperature: float = 0.1,
+    top_p: float = 0.6,
+    repetition_penalty: float = 1.2,
+    pages: Optional[List[int]] = None
+) -> str:
+    """
+    Extracts text from a PDF or image file using the OpenTyphoon OCR API.
+    """
+    url = os.getenv('OPEN_ROUTER_OCR_BASE_URL')
+    
+    if not url:
+        return "Error: OPEN_ROUTER_OCR_BASE_URL is not set in environment variables."
+
+    # Determine pages to extract if not specified
+    if pages is None:
+        if file_path.lower().endswith('.pdf'):
+            try:
+                reader = PdfReader(file_path)
+                num_pages = len(reader.pages)
+                pages = list(range(1, num_pages + 1))  # 1-based indexing
+            except Exception as e:
+                return f"Error reading PDF: {str(e)}"
+        else:
+            pages = [1]  # Assume single page for images
+
+    try:
+        with open(file_path, 'rb') as file:
+            files = {'file': file}
+            data = {
+                'task_type': task_type,
+                'max_tokens': str(max_tokens),
+                'temperature': str(temperature),
+                'top_p': str(top_p),
+                'repetition_penalty': str(repetition_penalty),
+                'pages': json.dumps(pages)  # Always send pages
+            }
+            
+            api_key = os.getenv('OPENTYPHOON_API_KEY')
+            if not api_key:
+                return "Error: OPENTYPHOON_API_KEY is not set in environment variables."
+
+            headers = {'Authorization': f'Bearer {api_key}'}
+            response = requests.post(url, files=files, data=data, headers=headers)
+
+            if response.status_code == 200:
+                try:
+                    result = response.json()
+                    extracted_texts = []
+                    for page_result in result.get('results', []):
+                        if page_result.get('success') and page_result.get('message'):
+                            content = page_result['message']['choices'][0]['message']['content']
+                            try:
+                                parsed_content = json.loads(content)
+                                text = parsed_content.get('natural_text', content)
+                            except json.JSONDecodeError:
+                                text = content
+                            extracted_texts.append(text)
+                        elif not page_result.get('success'):
+                            logging.error(f"Error processing {page_result.get('filename', 'unknown')}: {page_result.get('error', 'Unknown error')}")
+                    logging.info("OCR extraction completed. %d pages processed.", len(extracted_texts))
+                    return '\n'.join(extracted_texts)
+                except json.JSONDecodeError:
+                    # If not JSON, try to decode as text, ignoring errors
+                    try:
+                        text_response = response.content.decode('utf-8', errors='ignore')[:500]
+                        return f"Error parsing API response: {text_response}"
+                    except Exception:
+                        return "Error: API returned non-text data."
+            else:
+                try:
+                    error_text = response.content.decode('utf-8', errors='ignore')[:500]
+                    return f"Error: {response.status_code} - {error_text}"
+                except Exception:
+                    return f"Error: {response.status_code} - Non-text error response."
+    except Exception as e:
+        return f"Error during OCR extraction: {str(e)}"
+        
+
 async def other_tools():
     push_tool = Tool(name="send_push_notification", func=safe_tool(push), description="Use this tool when you want to send a push notification")
     file_tools = get_file_tools()
@@ -120,9 +206,14 @@ async def other_tools():
         func=safe_tool(serper.run),
         description="Use this tool when you want to get the results of an online web search"
     )
+    ocr_tool = Tool(
+        name="extract_text_from_file",
+        func=safe_tool(extract_text_from_file),  # Wrap with safe_tool for error handling
+        description="Extract text from a PDF or image file using OCR. Provide the file path in the sandbox directory (e.g., 'uploaded.pdf')."
+    )
 
     wikipedia = WikipediaAPIWrapper(wiki_client=None)
     wiki_tool = WikipediaQueryRun(api_wrapper=wikipedia)
 
 
-    return file_tools + [push_tool, tool_search, wiki_tool, file_link_tool, save_pdf_tool]
+    return file_tools + [push_tool, tool_search, wiki_tool, file_link_tool, save_pdf_tool, ocr_tool]
