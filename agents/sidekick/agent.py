@@ -9,11 +9,10 @@ from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from typing import List, Any, Optional, Dict
 from pydantic import BaseModel, Field
-from agents.sidekick.tools import playwright_tools, other_tools
+from agents.sidekick.tools import other_tools
 from agents.sidekick.nodes import worker, worker_router, evaluator, route_based_on_evaluation
 import aiosqlite
 import functools
-import asyncio
 from datetime import datetime
 from agents.sidekick.state import State
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
@@ -34,8 +33,6 @@ class Sidekick:
         self.llm_with_tools = None
         self.graph = None
         self.memory = None
-        self.browser = None
-        self.playwright = None
 
     # --- Wrapper methods for tracing ---
     def worker_node(self, state):
@@ -53,8 +50,7 @@ class Sidekick:
     async def setup(self):
         conn = await aiosqlite.connect("memory.db")
         self.memory = AsyncSqliteSaver(conn)
-        self.tools, self.browser, self.playwright = await playwright_tools()
-        self.tools += await other_tools()
+        self.tools = other_tools()
         worker_llm = ChatOpenAI(model="gpt-4o-mini")
         self.worker_llm_with_tools = worker_llm.bind_tools(self.tools)
         evaluator_llm = ChatOpenAI(model="gpt-4o-mini")
@@ -103,14 +99,5 @@ class Sidekick:
         return history + [user, reply, feedback]
 
     def cleanup(self):
-        if self.browser:
-            try:
-                loop = asyncio.get_running_loop()
-                loop.create_task(self.browser.close())
-                if self.playwright:
-                    loop.create_task(self.playwright.stop())
-            except RuntimeError:
-                # If no loop is running, do a direct run
-                asyncio.run(self.browser.close())
-                if self.playwright:
-                    asyncio.run(self.playwright.stop())
+        """Placeholder for future cleanup hooks."""
+        return None
