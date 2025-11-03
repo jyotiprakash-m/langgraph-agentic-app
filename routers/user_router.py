@@ -39,6 +39,10 @@ class UserOut(BaseModel):
 class UserUpdatePassword(BaseModel):
     password: str
 
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
 # ===========================
 # API Router
 # ===========================
@@ -79,6 +83,21 @@ def delete_user(
     session: Session = Depends(get_session)
 ):
     return delete_user_service(session, username)
+
+@router.post("/login")
+def login_user(
+    login: UserLogin,
+    session: Session = Depends(get_session)
+):
+    """
+    Simple login endpoint. In production, use hashed passwords and JWT tokens.
+    """
+    user = session.exec(
+        select(User).where(User.username == login.username)
+    ).first()
+    if not user or user.password != login.password:
+        raise HTTPException(status_code=401, detail="Invalid username or password.")
+    return {"detail": "Login successful", "username": user.username, "full_name": user.full_name}
 
 # ===========================
 # Service Functions

@@ -152,3 +152,18 @@ async def get_thread_messages(username: str, chat_id: str):
         return {"messages": filtered_messages}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving messages: {str(e)}")
+
+@router.delete("/thread/{username}/{chat_id}")
+async def delete_thread(username: str, chat_id: str):
+    """
+    Delete all checkpoints/messages for a specific thread.
+    """
+    try:
+        thread_id = f"{username}_{chat_id}"
+        conn = await aiosqlite.connect("memory.db")
+        await conn.execute("DELETE FROM checkpoints WHERE thread_id = ?", (thread_id,))
+        await conn.commit()
+        await conn.close()
+        return {"detail": f"Thread '{thread_id}' deleted successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting thread: {str(e)}")
