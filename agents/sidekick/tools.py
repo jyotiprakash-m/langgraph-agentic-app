@@ -1,7 +1,7 @@
 import json
 from typing import List, Optional
-from playwright.async_api import async_playwright
-from langchain_community.agent_toolkits import PlayWrightBrowserToolkit
+# from playwright.async_api import async_playwright
+# from langchain_community.agent_toolkits import PlayWrightBrowserToolkit
 from dotenv import load_dotenv
 import os
 import requests
@@ -39,11 +39,11 @@ def safe_tool(func):
             return f"Tool error: {str(e)}"
     return wrapper
 
-async def playwright_tools():
-    playwright = await async_playwright().start()
-    browser = await playwright.chromium.launch(headless=False)
-    toolkit = PlayWrightBrowserToolkit.from_browser(async_browser=browser)
-    return toolkit.get_tools(), browser, playwright
+# async def playwright_tools():
+#     playwright = await async_playwright().start()
+#     browser = await playwright.chromium.launch(headless=False)
+#     toolkit = PlayWrightBrowserToolkit.from_browser(async_browser=browser)
+#     return toolkit.get_tools(), browser, playwright
 
 def push(text: str):
     """Send a push notification to the user"""
@@ -262,7 +262,7 @@ def send_whatapp_message(to_number: str, message: str, message_type: str = "sms"
     except Exception as e:
         return f"❌ Failed to send {message_type}: {str(e)}"
     
-async def other_tools():
+def other_tools():
     push_tool = Tool(name="send_push_notification", func=safe_tool(push), description="Use this tool when you want to send a push notification")
     file_tools = get_file_tools()
     file_link_tool = Tool(name="get_file_link", func=safe_tool(get_file_link), description="Use this tool to get a public link for a file")
